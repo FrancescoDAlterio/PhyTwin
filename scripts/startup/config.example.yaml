@@ -1,0 +1,12 @@
+# Configurazione UE per l'avvio automatico di PhyTwin
+ues:
+  - ue_id: "ue1"
+    spawn_container: true
+    slice_ips:
+      slice1: "10.45.0.3"
+      slice2: "10.55.0.3"
+
+  - ue_id: "ue2"
+    spawn_container: true
+    slice_ips:
+      slice1: "10.45.0.4"

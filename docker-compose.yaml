@@ -1,0 +1,122 @@
+services:
+
+  # ==========================================
+  # 1. MIDDLEBOX & UE ORCHESTRATOR
+  # ==========================================
+  middlebox:
+    build:
+      context: ./images/middlebox
+      dockerfile: Dockerfile
+    container_name: middlebox
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    volumes:
+      - ./db:/data
+      #- shared-metrics-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock # Accesso a Docker Engine per spawnare UE
+      - ./images/ue:/app/ue_docker_context # Directory docker UE per buildare e lanciare gli UE
+      - ./images/middlebox/app:/app
+    networks:
+      gtpunetA:
+        ipv4_address: 10.45.0.2
+      gtpunetB:
+        ipv4_address: 10.55.0.2
+      datanetA:
+        ipv4_address: 20.10.0.2
+      datanetB:
+        ipv4_address: 20.20.0.2
+    ports:
+      - "8000:8000" # REST API per Middlebox e Gestione UE
+
+  # ==========================================
+  # 2. SERVERS DNN (Sempre attivi)
+  # ==========================================
+  server_dnn1_1:
+    build: images/server
+    container_name: server_dnn1_1
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - GATEWAY_IP=20.10.0.2
+      - UE_NETWORKS=10.45.0.0/24,10.55.0.0/24
+    volumes:
+      #- shared-metrics-data:/data
+      - ./db:/data
+      - ./images/server/app:/app
+    networks:
+      datanetA:
+        ipv4_address: 20.10.0.40
+    depends_on:
+      - middlebox
+
+  server_dnn2_1:
+    build: images/server
+    container_name: server_dnn2_1
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - GATEWAY_IP=20.20.0.2
+      - UE_NETWORKS=10.45.0.0/24,10.55.0.0/24
+    volumes:
+      #- shared-metrics-data:/data
+      - ./db:/data
+      - ./images/server/app:/app
+    networks:
+      datanetB:
+        ipv4_address: 20.20.0.50
+    depends_on:
+      - middlebox
+
+  # ==========================================
+  # 3. TELEMETRY MANAGER
+  # ==========================================
+  telemetry-manager:
+    build: images/telemetry-manager
+    container_name: telemetry-manager
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./db:/data
+      #- shared-metrics-data:/data
+    restart: always
+    depends_on:
+      - middlebox
+
+volumes:
+  shared-metrics-data:
+
+networks:
+  gtpunetA:
+    name: gtpunetA
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-gtpunetA
+    ipam:
+      config:
+        - subnet: 10.45.0.0/24
+  gtpunetB:
+    name: gtpunetB
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-gtpunetB
+    ipam:
+      config:
+        - subnet: 10.55.0.0/24
+  datanetA:
+    name: datanetA
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-datanetA
+    ipam:
+      config:
+        - subnet: 20.10.0.0/24
+  datanetB:
+    name: datanetB
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-datanetB
+    ipam:
+      config:
+        - subnet: 20.20.0.0/24
