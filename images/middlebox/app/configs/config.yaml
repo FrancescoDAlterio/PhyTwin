@@ -1,0 +1,29 @@
+middlebox:
+  default_root_rate: "1Gbit"
+  default_prio: 7
+
+slices:
+  slice1:
+    network_name: "gtpunetA"
+    subnet_cidr: "10.45.0.0" # IP della subnet
+    subnet_mask: "255.255.255.0"
+    gateway_ip: "10.45.0.2" # Stesso IP di middlebox esposto su quella network
+    dnn: "dnn1"
+  slice2:
+    network_name: "gtpunetB"
+    subnet_cidr: "10.55.0.0"
+    subnet_mask: "255.255.255.0"
+    gateway_ip: "10.55.0.2"
+    dnn: "dnn2"
+
+dnns:
+  dnn1:
+    network_name: "datanetA"
+    subnet_cidr: "20.10.0.0"
+    subnet_mask: "255.255.255.0"
+    gateway_ip: "20.10.0.2"
+  dnn2:
+    network_name: "datanetB"
+    subnet_cidr: "20.20.0.0"
+    subnet_mask: "255.255.255.0"
+    gateway_ip: "20.20.0.2"
